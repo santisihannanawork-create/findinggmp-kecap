@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FINDING GMP</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e86de">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f6fa; padding: 10px; margin: 0; }
+        .container { background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        h2 { text-align: center; color: #2e86de; }
+        label { font-weight: bold; display: block; margin-top: 10px; font-size: 14px; }
+        textarea, input { width: 100%; padding: 10px; margin-top: 5px; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: #2e86de; color: white; padding: 12px; border: none; border-radius: 8px; width: 100%; font-size: 16px; margin-top: 15px; cursor: pointer; }
+        #previewFoto { width: 100%; margin-top: 10px; border-radius: 8px; display: none; border: 1px solid #ddd; }
+        .loading { display: none; color: orange; font-weight: bold; text-align: center; margin-top: 5px; }
+        .table-container { margin-top: 20px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #2e86de; color: white; }
+        .img-table { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        .btn-hapus-semua { background: #e74c3c; margin-top: 10px; }
+    </style>
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>FINDING GMP</h2>
+    
+    <label>Deskripsi Temuan <span style="color:red">*</span></label>
+    <textarea id="deskripsi" placeholder="Apa temuannya?"></textarea>
+
+    <label>Lokasi</label>
+    <input list="daftar-ruangan" id="lokasi" placeholder="Pilih atau ketik lokasi...">
+  
+    <datalist id="daftar-ruangan">
+        <option value="ruang cuci botol">
+        <option value="ruang cuci">
+        <option value="ruang sterilisasi botol">
+        <option value="Ruang ganti & loker Pi">
+        <option value="Ruang ganti & loker Pa">
+        <option value="RAO">
+        <option value="Ruang formulasi">
+        <option value="Ruang koji">
+        <option value="Ruang Biak kultur">
+        <option value="Ruang filling">
+        <option value="Ruang Sekunder">
+        <option value="Ruang bahan jadi">
+        <option value="Ruang sortasi, cuci, & rebus">
+        <option value="Ruang pra koji">
+        <option value="Ruang pemasakan & pasteurisasi">
+        <option value="Ruang Buffer Moromi">
+        <option value="Ruang QC">
+        <option value="Ruang Admin">
+        <option value="Ruang BB/BK">
+        <option value="RAB">
+        <option value="Ruang Buffer Koji">
+        <option value="Ruang Pra Moromi">
+        <option value="Ruang Filter Press">
+    </datalist>
+
+    <label>Ambil Foto <span style="color:red">*</span></label>
+    <input type="file" id="inputFoto" accept="image/*" capture="environment">
+    
+    <div id="statusProses" class="loading">Memproses gambar... Mohon tunggu...</div>
+    <img id="previewFoto">
+
+    <button type="button" onclick="simpanData()">Simpan Temuan</button>
+    
+    <div class="table-container">
+        <table id="tabelData">
+            <thead>
+                <tr>
+                    <th>Deskripsi</th>
+                    <th>Foto</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <button onclick="downloadExcel()" style="background: #27ae60;">Download Excel</button>
+    <button class="btn-hapus-semua" onclick="hapusSemua()">⚠️ Hapus Semua Data</button>
+</div>
+
+<script>
+let fotoBase64 = "";
+let listData = JSON.parse(localStorage.getItem("gmp_data")) || [];
+
+// 1. Registrasi Service Worker untuk Offline
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// 2. Tampilkan data lama saat buka aplikasi
+window.onload = () => { renderTable(); };
+
+// 3. Proses Foto (Kompresi Otomatis agar Terdeteksi)
+document.getElementById("inputFoto").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    const status = document.getElementById("statusProses");
+    const preview = document.getElementById("previewFoto");
+
+    if (file) {
+        status.style.display = "block";
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                // Perkecil ukuran ke 800px agar memori aman
+                const MAX_WIDTH = 800;
+                const scale = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scale;
+
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Simpan ke variabel global
+                fotoBase64 = canvas.toDataURL("image/jpeg", 0.7);
+                
+                // Tampilkan Preview
+                preview.src = fotoBase64;
+                preview.style.display = "block";
+                status.style.display = "none";
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// 4. Fungsi Simpan
+function simpanData() {
+    const deskripsi = document.getElementById("deskripsi").value;
+    const lokasi = document.getElementById("lokasi").value;
+
+    if (!deskripsi || !fotoBase64) {
+        alert("⚠️ Deskripsi dan Foto HARUS diisi!");
+        return;
+    }
+
+    const dataBaru = {
+        deskripsi,
+        lokasi,
+        foto: fotoBase64,
+        waktu: new Date().toLocaleString()
+    };
+
+    listData.push(dataBaru);
+    localStorage.setItem("gmp_data", JSON.stringify(listData));
+    
+    // Reset Form
+    document.getElementById("deskripsi").value = "";
+    document.getElementById("lokasi").value = "";
+    document.getElementById("inputFoto").value = "";
+    document.getElementById("previewFoto").style.display = "none";
+    fotoBase64 = "";
+
+    renderTable();
+    alert("✅ Data tersimpan secara lokal!");
+}
+
+// 5. Render Tabel
+function renderTable() {
+    const tbody = document.querySelector("#tabelData tbody");
+    tbody.innerHTML = "";
+    listData.forEach((item, index) => {
+        const row = `<tr>
+            <td>${item.deskripsi}<br><small>${item.lokasi}</small></td>
+            <td><img src="${item.foto}" class="img-table"></td>
+            <td><button onclick="hapusData(${index})" style="background:red; padding:5px; font-size:10px;">Hapus</button></td>
+        </tr>`;
+        tbody.innerHTML += row;
+    });
+}
+
+function hapusData(index) {
+    if(confirm("Hapus data ini?")) {
+        listData.splice(index, 1);
+        localStorage.setItem("gmp_data", JSON.stringify(listData));
+        renderTable();
+    }
+}
+function hapusSemua() {
+    if (listData.length === 0) return alert("Data sudah kosong.");
+    
+    if(confirm("⚠️ Hapus SELURUH data? Pastikan Anda sudah download file Excel terlebih dahulu.")) {
+        listData = [];
+        localStorage.removeItem("gmp_data");
+        renderTable();
+        alert("🗑️ Semua data telah dibersihkan.");
+    }
+}
+
+// 6. Download ke Excel
+async function downloadExcel() {
+    if (listData.length === 0) return alert("Belum ada data!");
+    
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Temuan GMP');
+
+    sheet.columns = [
+        { header: 'Waktu', key: 'waktu', width: 20 },
+        { header: 'Deskripsi', key: 'deskripsi', width: 30 },
+        { header: 'Lokasi', key: 'lokasi', width: 15 },
+        { header: 'Foto', key: 'foto', width: 25 }
+    ];
+
+    for (let i = 0; i < listData.length; i++) {
+        const item = listData[i];
+        const row = sheet.addRow([item.waktu, item.deskripsi, item.lokasi, '']);
+        row.height = 100;
+        
+        const imageId = workbook.addImage({
+            base64: item.foto,
+            extension: 'jpeg',
+        });
+        sheet.addImage(imageId, {
+            tl: { col: 3, row: i + 1 },
+            ext: { width: 120, height: 120 }
+        });
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), `Laporan_GMP_Kecap_${new Date().getTime()}.xlsx`);
+}
+</script>
+</body>
+</html>
