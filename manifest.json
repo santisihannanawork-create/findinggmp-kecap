@@ -1,0 +1,21 @@
+{
+  "name": "Finding GMP Offline",
+  "short_name": "FindingGMPKecap",
+  "description": "Aplikasi pelaporan GMP Kecap secara offline",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f5f6fa",
+  "theme_color": "#2e86de",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/2e86de/ffffff?text=GMP",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512/2e86de/ffffff?text=GMP",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
