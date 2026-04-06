@@ -24,7 +24,19 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background: #2e86de; color: white; }
         .img-table { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
-        .btn-hapus-semua { background: #e74c3c; margin-top: 10px; }
+        
+        /* Style Tombol Reset yang baru */
+        .btn-hapus-semua { 
+            background: #e74c3c; 
+            margin-top: 20px; 
+            font-size: 11px; /* Ukuran tulisan diperkecil */
+            padding: 5px; /* Ukuran tombol diperkecil */
+            width: auto; /* Lebar tombol mengikuti teks, tidak full */
+            display: block; 
+            margin-left: auto; 
+            margin-right: auto; 
+            opacity: 0.7; /* Dibuat agak transparan agar tidak mencolok */
+        }
     </style>
     </style>
 </head>
@@ -87,7 +99,7 @@
     </div>
 
     <button onclick="downloadExcel()" style="background: #27ae60;">Download Excel</button>
-    <button class="btn-hapus-semua" onclick="hapusSemua()">⚠️ Hapus Semua Data</button>
+    <button class="btn-hapus-semua" onclick="hapusSemua()">Reset Data</button>
 </div>
 
 <script>
