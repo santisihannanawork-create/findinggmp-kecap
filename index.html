@@ -186,11 +186,23 @@ function simpanData() {
 function renderTable() {
     const tbody = document.querySelector("#tabelData tbody");
     tbody.innerHTML = "";
-    listData.forEach((item, index) => {
+    const dataTerbalik = [...listData].reverse();
+    dataTerbalik.forEach((item, index) => {
+        const indexAsli = listData.length - 1 - index;
+        const nomorUrut = listData.length - index;
         const row = `<tr>
-            <td>${item.deskripsi}<br><small>${item.lokasi}</small></td>
-            <td><img src="${item.foto}" class="img-table"></td>
-            <td><button onclick="hapusData(${index})" style="background:red; padding:5px; font-size:10px;">Hapus</button></td>
+            <td style="text-align: center; font-weight: bold; color: #2e86de;">${nomorUrut}</td>
+            <td>
+                <strong>${item.deskripsi}</strong><br>
+                <small>📍 ${item.lokasi}</small><br>
+                <small style="color: #888; font-size: 10px;">${item.waktu}</small>
+            </td>
+            <td style="text-align: center;">
+                <img src="${item.foto}" class="img-table" style="width: 45px; height: 45px; object-fit: cover; border-radius: 5px;">
+            </td>
+            <td style="text-align: center;">
+                <button onclick="hapusData(${indexAsli})" style="background:#e74c3c; color:white; border:none; padding:5px 8px; border-radius:5px; font-size:10px; cursor:pointer;">Hapus</button>
+            </td>
         </tr>`;
         tbody.innerHTML += row;
     });
